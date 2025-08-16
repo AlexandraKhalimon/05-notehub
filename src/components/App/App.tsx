@@ -1,22 +1,26 @@
 import css from './App.module.css';
-import NoteList from '../NoteList/NoteList';
-import { useQuery } from '@tanstack/react-query';
-import { useEffect, useState } from 'react';
-import { fetchNotes } from '../../services/noteService';
-import Pagination from '../Pagination/Pagination';
 import type { Note } from '../../types/note';
+import { fetchNotes } from '../../services/noteService';
+import NoteList from '../NoteList/NoteList';
+import Pagination from '../Pagination/Pagination';
 import Modal from '../Modal/Modal';
 import NoteForm from '../NoteForm/NoteForm';
+import SearchBox from '../SearchBox/SearchBox';
+import { useQuery } from '@tanstack/react-query';
+import { useEffect, useState } from 'react';
+import { useDebouncedCallback } from 'use-debounce';
+import toast, { Toaster } from 'react-hot-toast';
+
 
 export default function App() {
   const [notes, setNotes] = useState<Note[]>([]);
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [isModalOpen, setIsModalOpen] = useState(false);
-
+  const [searchQuery, setSearchQuery] = useState("");
 
   const { data, isSuccess } = useQuery({
-    queryKey: ['notes', currentPage],
-    queryFn: () => fetchNotes(),
+    queryKey: ['notes', currentPage, searchQuery],
+    queryFn: () => fetchNotes({search: searchQuery, page: currentPage, perPage: 12}),
   })
 
   useEffect(() => {
@@ -24,22 +28,26 @@ export default function App() {
       setNotes(data.notes);
     }
 
-    if (data?.notes.length === 0) {
-      return 
+    if (data && data?.notes.length === 0) {
+      toast.error("Sorry, the notelist is empty!");
+      return;
     }
   }, [data, isSuccess]);
+
 
   const totalPages = data?.totalPages || 0;
 
   const openModal = () => setIsModalOpen(true);
   const closeModal = () => setIsModalOpen(false);
+
+  const deboucedSearchQuery = useDebouncedCallback(setSearchQuery, 300);
   
   return (
     <div className={css.app}>
+      <Toaster position='top-center'/>
       <header className={css.toolbar}>
-        {/* Компонент SearchBox */}
+        <SearchBox text={ searchQuery } onSearch={deboucedSearchQuery}/>
         {totalPages > 1 && <Pagination totalPages={totalPages} currentPage={currentPage} setCurrentPage={setCurrentPage}/>}
-        {/* Кнопка створення нотатки */}
         <button className={css.button} onClick={openModal}>Create note +</button>
         {isModalOpen && <Modal onClose={closeModal} children={<NoteForm onClose={closeModal} onSuccess={closeModal}/>} />}
       </header>
