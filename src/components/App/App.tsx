@@ -10,6 +10,8 @@ import { useQuery } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import { useDebouncedCallback } from 'use-debounce';
 import toast, { Toaster } from 'react-hot-toast';
+import Loader from '../Loader/Loader';
+import ErrorMessage from '../ErrorMessage/ErrorMessage';
 
 
 export default function App() {
@@ -18,7 +20,7 @@ export default function App() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
-  const { data, isSuccess } = useQuery({
+  const { data, isSuccess, isLoading, isError } = useQuery({
     queryKey: ['notes', currentPage, searchQuery],
     queryFn: () => fetchNotes({search: searchQuery, page: currentPage, perPage: 12}),
   })
@@ -51,6 +53,8 @@ export default function App() {
         <button className={css.button} onClick={openModal}>Create note +</button>
         {isModalOpen && <Modal onClose={closeModal} children={<NoteForm onClose={closeModal} onSuccess={closeModal}/>} />}
       </header>
+      {isLoading && <Loader />}
+      {isError && <ErrorMessage/>}
       {data?.notes.length !== 0 && <NoteList notes={notes}/>}
     </div>
   )

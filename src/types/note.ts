@@ -12,5 +12,3 @@ export interface NewNote {
     content: string;
     tag: string;
 }
-
-// export type NoteTag = "Todo" | "Work" | "Personal" | "Meeting" | "Shopping";

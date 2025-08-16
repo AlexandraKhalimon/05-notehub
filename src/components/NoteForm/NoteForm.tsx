@@ -54,7 +54,6 @@ export default function NoteForm({onClose, onSuccess}: NoteFormProps) {
             content: values.content,
             tag: values.tag
         });
-        // console.log("Note values:", values);
         actions.resetForm();
     }
     
