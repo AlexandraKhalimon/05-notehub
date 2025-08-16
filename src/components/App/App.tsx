@@ -5,10 +5,13 @@ import { useEffect, useState } from 'react';
 import { fetchNotes } from '../../services/noteService';
 import Pagination from '../Pagination/Pagination';
 import type { Note } from '../../types/note';
+import Modal from '../Modal/Modal';
+import NoteForm from '../NoteForm/NoteForm';
 
 export default function App() {
   const [notes, setNotes] = useState<Note[]>([]);
   const [currentPage, setCurrentPage] = useState<number>(1);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
 
   const { data, isSuccess } = useQuery({
@@ -27,6 +30,9 @@ export default function App() {
   }, [data, isSuccess]);
 
   const totalPages = data?.totalPages || 0;
+
+  const openModal = () => setIsModalOpen(true);
+  const closeModal = () => setIsModalOpen(false);
   
   return (
     <div className={css.app}>
@@ -34,6 +40,8 @@ export default function App() {
         {/* Компонент SearchBox */}
         {totalPages > 1 && <Pagination totalPages={totalPages} currentPage={currentPage} setCurrentPage={setCurrentPage}/>}
         {/* Кнопка створення нотатки */}
+        <button className={css.button} onClick={openModal}>Create note +</button>
+        {isModalOpen && <Modal onClose={closeModal} children={<NoteForm onClose={closeModal} onSuccess={closeModal}/>} />}
       </header>
       {data?.notes.length !== 0 && <NoteList notes={notes}/>}
     </div>
