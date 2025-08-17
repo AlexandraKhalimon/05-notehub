@@ -6,9 +6,9 @@ import Pagination from '../Pagination/Pagination';
 import Modal from '../Modal/Modal';
 import NoteForm from '../NoteForm/NoteForm';
 import SearchBox from '../SearchBox/SearchBox';
-import { useQuery } from '@tanstack/react-query';
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
-import { useDebouncedCallback } from 'use-debounce';
+import { useDebounce } from 'use-debounce';
 import toast, { Toaster } from 'react-hot-toast';
 import Loader from '../Loader/Loader';
 import ErrorMessage from '../ErrorMessage/ErrorMessage';
@@ -19,10 +19,12 @@ export default function App() {
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearchQuery] = useDebounce(searchQuery, 300);
 
   const { data, isSuccess, isLoading, isError } = useQuery({
-    queryKey: ['notes', currentPage, searchQuery],
-    queryFn: () => fetchNotes({search: searchQuery, page: currentPage, perPage: 12}),
+    queryKey: ['notes', currentPage, debouncedSearchQuery],
+    queryFn: () => fetchNotes({ search: debouncedSearchQuery, page: currentPage, perPage: 12 }),
+    placeholderData: keepPreviousData
   })
 
   useEffect(() => {
@@ -42,20 +44,23 @@ export default function App() {
   const openModal = () => setIsModalOpen(true);
   const closeModal = () => setIsModalOpen(false);
 
-  const deboucedSearchQuery = useDebouncedCallback(setSearchQuery, 300);
+  const handleChange = (query: string) => {
+    setSearchQuery(query);
+    setCurrentPage(1);
+  };
   
   return (
     <div className={css.app}>
       <Toaster position='top-center'/>
       <header className={css.toolbar}>
-        <SearchBox text={ searchQuery } onSearch={deboucedSearchQuery}/>
+        <SearchBox text={ searchQuery } onSearch={handleChange}/>
         {totalPages > 1 && <Pagination totalPages={totalPages} currentPage={currentPage} setCurrentPage={setCurrentPage}/>}
         <button className={css.button} onClick={openModal}>Create note +</button>
         {isModalOpen && <Modal onClose={closeModal} children={<NoteForm onClose={closeModal} onSuccess={closeModal}/>} />}
       </header>
       {isLoading && <Loader />}
       {isError && <ErrorMessage/>}
-      {data?.notes.length !== 0 && <NoteList notes={notes}/>}
+      {data && data?.notes.length > 0 && <NoteList notes={notes}/>}
     </div>
   )
 };
